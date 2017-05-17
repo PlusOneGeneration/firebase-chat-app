@@ -1,0 +1,66 @@
+<div class="row">
+  <div class="col-sm-12">
+    <br>
+    <ul class="nav nav-pills">
+      <li role="presentation" [ngClass]="{'active': tab === 'login'}">
+        <a (click)="toggleTab()">Login</a>
+      </li>
+      <li role="presentation" [ngClass]="{'active': tab === 'signup'}">
+        <a (click)="toggleTab()">Signup</a>
+      </li>
+    </ul>
+  </div>
+</div>
+<div class="row">
+  <div class="col-sm-12">
+    <form *ngIf="tab === 'login'">
+      <h1>Login</h1>
+      <div class="form-group">
+        <input class="form-control" type="text"
+               placeholder="Email"
+               [(ngModel)]="form.email" name="email" autocomplete="on">
+      </div>
+      <div class="form-group">
+        <input class="form-control" type="password"
+               placeholder="Password"
+               [(ngModel)]="form.password" name="password" autocomplete="on">
+      </div>
+      <button class="btn btn-default" type="submit" (click)="login()">Login</button>
+    </form>
+
+    <form *ngIf="tab === 'signup'">
+      <h1>Sign Up</h1>
+      <div class="form-group">
+        <input class="form-control" type="text"
+               placeholder="Name"
+               [(ngModel)]="form.name" name="name" autocomplete="off">
+      </div>
+      <div class="form-group">
+
+        <div class="radio">
+          <label>
+            <input type="radio" [(ngModel)]="form.gender" value="male" name="gender" autocomplete="off">
+            Male
+          </label>
+        </div>
+        <div class="radio">
+          <label>
+            <input type="radio" [(ngModel)]="form.gender" value="female" name="gender" autocomplete="off">
+            Female
+          </label>
+        </div>
+      </div>
+      <div class="form-group">
+        <input class="form-control" type="text"
+               placeholder="Email"
+               [(ngModel)]="form.email" name="email" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <input class="form-control" type="password"
+               placeholder="Password"
+               [(ngModel)]="form.password" name="password" autocomplete="off">
+      </div>
+      <button class="btn btn-default" type="submit" (click)="signup()">Sign Up</button>
+    </form>
+  </div>
+</div>

@@ -1,4 +1,6 @@
-import { Component } from '@angular/core';
+import {Component} from '@angular/core';
+import {FirebaseService} from "./firebase/firebase.service";
+import {Router} from "@angular/router";
 
 @Component({
   selector: 'app-root',
@@ -6,5 +8,17 @@ import { Component } from '@angular/core';
   styleUrls: ['./app.component.css']
 })
 export class AppComponent {
-  title = 'app works!';
+  user: any;
+
+  constructor(private firebaseService: FirebaseService,
+              private router: Router) {
+    this.firebaseService.$user.subscribe((user) => this.user = user);
+  }
+
+  logout() {
+    this.firebaseService.logout().then(() => {
+    console.log('>>>>> logout')
+      this.router.navigateByUrl('/auth')
+    });
+  }
 }
