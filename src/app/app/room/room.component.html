@@ -1,10 +1,17 @@
 <div class="row">
   <div class="col-xs-8">
     <div class="main-block">
-      <div *ngFor="let item of messages" style="margin-bottom: 20px;">
-        <i class="text-muted">{{date(item.createdAt)}}</i>
-        <small>{{(getUserData(item.author) | async)?.name}}</small>
+      <!--<pre>{{messages | async | json}}</pre>-->
+      <div *ngFor="let item of messages | async" style="margin-bottom: 20px;">
+        <div>
+          <i class="text-muted">{{date(item.createdAt)}}</i>
+          <small>{{(getUserData(item.author) | async)?.name}}</small>
+          <div class="pull-right">
+            <button (click)="deleteMessage(item.$key)" class="btn btn-default">Del</button>
+          </div>
+        </div>
         <p>{{item.text}}</p>
+
       </div>
     </div>
   </div>

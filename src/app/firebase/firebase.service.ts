@@ -2,6 +2,8 @@ import {Injectable} from "@angular/core";
 import {BehaviorSubject, Subject} from "rxjs";
 import * as firebase from "firebase";
 
+import { AngularFireDatabase, FirebaseListObservable } from 'angularfire2/database';
+
 @Injectable()
 export class FirebaseService {
   database: any;
@@ -12,7 +14,8 @@ export class FirebaseService {
   $userAdded: Subject<any> = new Subject();
   $userRemoved: Subject<any> = new Subject();
 
-  constructor() {
+  messages: FirebaseListObservable<any[]>;
+  constructor(private db: AngularFireDatabase) {
     let config = {
       apiKey: "AIzaSyCaPoxUIQxAOx3P6sqjscBblMwLvaVXuAQ",
       authDomain: "test-5b16b.firebaseapp.com",
@@ -23,7 +26,6 @@ export class FirebaseService {
     this.database = firebase.database();
 
     this.$user.subscribe((user) => {
-      console.log('>>>>> user 000', user)
       this.currentUser = user;
     });
 
@@ -38,7 +40,8 @@ export class FirebaseService {
       this.$user.next(null);
     }
 
-    this.observeMessages();
+    this.messages = this.db.list('/room/messages/');
+
     this.observeOnlineUsers();
   }
 
@@ -48,16 +51,6 @@ export class FirebaseService {
 
   getApp() {
     return this.app;
-  }
-
-  write(id) {
-    return this.getDB().ref('room').set({
-      username: id
-    });
-  }
-
-  readOnce(id?) {
-    return this.getDB().ref('room').once('value').then((snapshot) => snapshot.val());
   }
 
   logout() {
@@ -70,19 +63,19 @@ export class FirebaseService {
   }
 
   getMessages() {
-    return Promise.resolve()
-      .then(() => {
-        return this.getDB().ref('room/messages/').once('value')
-          .then((snapshot) => {
-            if (snapshot.val()) {
+    return this.messages;
+  }
 
-              let keys = Object.keys(snapshot.val());
-              return keys.map((key) => snapshot.val()[key]);
-            } else {
-              return [];
-            }
-          })
-      })
+  sendMessage(message: any) {
+    return this.messages.push({
+      createdAt: Date.now(),
+      text: message,
+      author: this.currentUser.uid
+    });
+  }
+
+  deleteMessage(key: string) {
+    this.messages.remove(key);
   }
 
   getOnlineUsers() {
@@ -99,25 +92,6 @@ export class FirebaseService {
             }
           })
       })
-  }
-
-  sendMessage(message: any) {
-    return this.getDB().ref('room/messages/').push({
-      uid: Date.now(),
-      createdAt: Date.now(),
-      text: message,
-      author: this.currentUser.uid
-    });
-  }
-
-  getMessage$() {
-    return this.$message;
-  }
-
-  observeMessages() {
-    this.getDB().ref('room/messages/').on('child_added', (snapshot) => {
-      this.$message.next(snapshot.val())
-    });
   }
 
   getNewUser() {

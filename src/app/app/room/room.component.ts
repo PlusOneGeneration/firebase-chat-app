@@ -11,29 +11,20 @@ import {Observable, Subject, BehaviorSubject} from "rxjs";
 export class RoomComponent implements OnInit {
   users: any[] = [];
 
-
-  messages: any[] = [];
+  messages: any;
   message: any = '';
 
   constructor(private firebaseService: FirebaseService) {
   }
 
   ngOnInit(): void {
-    this.firebaseService.getMessages()
-      .then((messages) => {
-        console.log('>>>>> messages []', messages)
-        this.messages = messages;
-      });
+    this.messages = this.firebaseService.getMessages();
 
     this.firebaseService.getOnlineUsers()
       .then((users) => {
         console.log('>>>>> users []', users)
         this.users = users;
       });
-
-    this.firebaseService.getMessage$().subscribe((message) => {
-      this.messages.push(message)
-    });
 
     this.firebaseService.getNewUser().subscribe((user) => {
       this.users.push(user);
@@ -57,5 +48,9 @@ export class RoomComponent implements OnInit {
 
   getUserData(uid) {
     return this.firebaseService.getUserData(uid)
+  }
+
+  deleteMessage(key) {
+    return this.firebaseService.deleteMessage(key);
   }
 }
