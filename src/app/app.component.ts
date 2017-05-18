@@ -16,9 +16,6 @@ export class AppComponent {
   }
 
   logout() {
-    this.firebaseService.logout().then(() => {
-    console.log('>>>>> logout')
-      this.router.navigateByUrl('/auth')
-    });
+    this.firebaseService.logout();
   }
 }

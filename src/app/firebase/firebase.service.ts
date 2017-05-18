@@ -1,64 +1,69 @@
 import {Injectable} from "@angular/core";
-import {BehaviorSubject, Subject} from "rxjs";
+import {BehaviorSubject, Subject, Observable} from "rxjs";
 import * as firebase from "firebase";
 
-import { AngularFireDatabase, FirebaseListObservable } from 'angularfire2/database';
+import {AngularFireDatabase, FirebaseListObservable} from 'angularfire2/database';
+import {AngularFireAuth} from 'angularfire2/auth';
+import {Router} from "@angular/router";
 
 @Injectable()
 export class FirebaseService {
   database: any;
   app: any;
+  user: Observable<firebase.User>;
   $user: BehaviorSubject<any> = new BehaviorSubject(null);
-  currentUser: any;
-  $message: Subject<any> = new Subject();
-  $userAdded: Subject<any> = new Subject();
-  $userRemoved: Subject<any> = new Subject();
 
+  users: FirebaseListObservable<any[]>;
   messages: FirebaseListObservable<any[]>;
-  constructor(private db: AngularFireDatabase) {
+  onlineUsers: FirebaseListObservable<any[]>;
+
+  constructor(private db: AngularFireDatabase,
+              private router: Router,
+              public afAuth: AngularFireAuth) {
     let config = {
       apiKey: "AIzaSyCaPoxUIQxAOx3P6sqjscBblMwLvaVXuAQ",
       authDomain: "test-5b16b.firebaseapp.com",
       databaseURL: "https://test-5b16b.firebaseio.com"
     };
 
-    this.app = firebase.initializeApp(config);
-    this.database = firebase.database();
+    let user = this.afAuth.auth.currentUser || JSON.parse(localStorage.getItem('user'));
 
-    this.$user.subscribe((user) => {
-      this.currentUser = user;
-    });
-
-    let user = JSON.parse(localStorage.getItem('user'));
     if (user) {
-      this.currentUser = user;
       this.$user.next(user);
     } else {
-      firebase.auth().signOut();
+      this.afAuth.auth.signOut();
       localStorage.removeItem('user');
-      this.currentUser = null;
       this.$user.next(null);
     }
 
+    this.user = afAuth.authState;
+
     this.messages = this.db.list('/room/messages/');
-
-    this.observeOnlineUsers();
+    this.onlineUsers = this.db.list('/room/online/');
+    this.users = this.db.list('/users/');
   }
 
-  getDB() {
-    return this.database;
+  signup(email: string, password: string) {
+    return this.afAuth.auth.createUserWithEmailAndPassword(email, password)
   }
 
-  getApp() {
-    return this.app;
+  login(email: string, password: string) {
+    return this.afAuth.auth.signInWithEmailAndPassword(email, password)
+      .then(() => {
+        this.$user.next(this.afAuth.auth.currentUser);
+        localStorage.setItem('user', JSON.stringify(this.afAuth.auth.currentUser));
+        this.setUserToRoom(this.afAuth.auth.currentUser.uid).then(() => this.router.navigateByUrl('/app'));
+      });
   }
 
   logout() {
-    localStorage.removeItem('user');
-    return this.removeUserFromRoom().then(() => {
-      this.$user.next(null);
-      this.currentUser = null;
-      firebase.auth().signOut();
+    return Promise.resolve().then(() => {
+      localStorage.removeItem('user');
+      return this.removeUserFromRoom(this.afAuth.auth.currentUser.uid).then(() => {
+        this.$user.next(null);
+        this.afAuth.auth.signOut();
+        this.router.navigateByUrl('/auth');
+      });
     });
   }
 
@@ -70,7 +75,7 @@ export class FirebaseService {
     return this.messages.push({
       createdAt: Date.now(),
       text: message,
-      author: this.currentUser.uid
+      author: this.afAuth.auth.currentUser.uid
     });
   }
 
@@ -79,65 +84,32 @@ export class FirebaseService {
   }
 
   getOnlineUsers() {
-    return Promise.resolve()
-      .then(() => {
-        return this.getDB().ref('room/online/').once('value')
-          .then((snapshot) => {
-            if (snapshot.val()) {
-
-              let keys = Object.keys(snapshot.val());
-              return keys.map((key) => snapshot.val()[key]);
-            } else {
-              return [];
-            }
-          })
-      })
+    return this.onlineUsers;
   }
 
-  getNewUser() {
-    return this.$userAdded;
+  setUserToRoom(uid) {
+    return this.getUserData(uid).then((user) => this.onlineUsers.push(user));
   }
 
-  getRemovedUser() {
-    return this.$userRemoved;
-  }
-
-  observeOnlineUsers() {
-    this.getDB().ref('room/online/').on('child_added', (snapshot) => {
-      this.$userAdded.next(snapshot.val())
-    });
-
-    this.getDB().ref('room/online/').on('child_removed', (snapshot) => {
-      this.$userRemoved.next(snapshot.val())
-    });
+  removeUserFromRoom(uid) {
+    return this.onlineUsers.remove(uid);
   }
 
   addUser(user) {
-    return this.getDB().ref('users/' + user.uid).set(user);
+    // remake with this.user.push()
+    return this.db.database.ref('users/' + user.uid).set(user);
   }
 
-  users = {};
+  usersCash = {};
 
   getUserData(uid): Promise<any> {
-    if (!this.users[uid]) {
-      this.users[uid] = Promise.resolve()
-        .then(() => {
-          return this.getDB().ref('users/' + uid).once('value').then((snapshot) => snapshot.val());
-        });
+    if (!this.usersCash[uid]) {
+      // remake with this.user.list()
+      this.usersCash[uid] = Promise.resolve().then(() => {
+        return this.db.database.ref('users/' + uid).once('value').then((snapshot) => snapshot.val());
+      })
     }
 
-    return this.users[uid];
-  }
-
-  setUserToRoom() {
-    return this.getUserData(this.currentUser.uid).then((user) => {
-      return this.getDB().ref('room/online/' + user.uid).set(user);
-    })
-  }
-
-  removeUserFromRoom() {
-    return this.getUserData(this.currentUser.uid).then((user) => {
-      return this.getDB().ref('room/online/' + user.uid).remove();
-    })
+    return this.usersCash[uid];
   }
 }

@@ -9,7 +9,7 @@ import {Observable, Subject, BehaviorSubject} from "rxjs";
   styleUrls: ['./room.component.css']
 })
 export class RoomComponent implements OnInit {
-  users: any[] = [];
+  users: any;
 
   messages: any;
   message: any = '';
@@ -20,20 +20,7 @@ export class RoomComponent implements OnInit {
   ngOnInit(): void {
     this.messages = this.firebaseService.getMessages();
 
-    this.firebaseService.getOnlineUsers()
-      .then((users) => {
-        console.log('>>>>> users []', users)
-        this.users = users;
-      });
-
-    this.firebaseService.getNewUser().subscribe((user) => {
-      this.users.push(user);
-    });
-
-    this.firebaseService.getRemovedUser().subscribe((user) => {
-      this.users = this.users.filter((_user) => _user.uid !== user.uid);
-      // this.users.push(user);
-    });
+    this.users = this.firebaseService.getOnlineUsers();
   }
 
   send() {

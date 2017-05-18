@@ -26,7 +26,7 @@ export class AuthComponent {
   tab: string = 'login';
   form: Form = new Form();
 
-  constructor(private firebaseService: FirebaseService, private router: Router) {
+  constructor(private firebaseService: FirebaseService) {
     this.form = new Form();
   }
 
@@ -41,22 +41,11 @@ export class AuthComponent {
   }
 
   login() {
-    this.firebaseService.getApp().auth()
-      .signInWithEmailAndPassword(this.form.email, this.form.password)
-      .then((res) => {
-        this.firebaseService.$user.next(this.firebaseService.getApp().auth().currentUser);
-        localStorage.setItem('user', JSON.stringify(this.firebaseService.getApp().auth().currentUser));
-        this.firebaseService.setUserToRoom();
-        this.router.navigateByUrl('/app');
-      })
-      .catch(function (error) {
-        console.log('>>>>> Login ERR', error);
-      });
+    this.firebaseService.login(this.form.email, this.form.password);
   }
 
   signup() {
-    this.firebaseService.getApp().auth()
-      .createUserWithEmailAndPassword(this.form.email, this.form.password)
+    this.firebaseService.signup(this.form.email, this.form.password)
       .then((res) => {
         let data = {
           email: this.form.email,
@@ -65,12 +54,8 @@ export class AuthComponent {
           uid: res.uid
         };
 
-        this.firebaseService.addUser(data).then(() => {
-          this.tab = 'login';
-        })
+        return this.firebaseService.addUser(data);
       })
-      .catch(function (error) {
-        console.log('>>>>> Signup ERR', error);
-      });
+      .then(() => this.tab = 'login');
   }
 }

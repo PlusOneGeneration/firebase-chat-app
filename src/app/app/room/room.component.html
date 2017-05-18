@@ -18,7 +18,7 @@
   <div class="col-xs-4">
     <div class="sidebar">
       <h4>Online users</h4>
-      <div *ngFor="let usr of users" style="margin-bottom: 20px;">
+      <div *ngFor="let usr of users | async" style="margin-bottom: 20px;">
         <small>{{usr.name}}</small>
       </div>
     </div>
