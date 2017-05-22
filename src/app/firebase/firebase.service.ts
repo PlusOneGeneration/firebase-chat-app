@@ -50,7 +50,6 @@ export class FirebaseService {
   login(email: string, password: string) {
     return this.afAuth.auth.signInWithEmailAndPassword(email, password)
       .then(() => {
-        console.log('>>>>> UID', this.afAuth.auth.currentUser.uid)
         this.$user.next(this.afAuth.auth.currentUser);
         localStorage.setItem('user', JSON.stringify(this.afAuth.auth.currentUser));
         this.setUserToRoom(this.afAuth.auth.currentUser.uid)
