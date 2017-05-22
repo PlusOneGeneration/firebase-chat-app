@@ -5,9 +5,9 @@
       <div *ngFor="let item of messages | async" style="margin-bottom: 20px;">
         <div>
           <i class="text-muted">{{date(item.createdAt)}}</i>
-          <small>{{(getUserData(item.author) | async)?.name}}</small>
+          <small>{{(getUserData(item.author) | async)?.name}}<span class="text-warning" *ngIf="isYou(item.author)"> (you)</span></small>
           <div class="pull-right">
-            <button (click)="deleteMessage(item.$key)" class="btn btn-default">Del</button>
+            <button (click)="deleteMessage(item.$key)" class="btn btn-danger btn-xs">X</button>
           </div>
         </div>
         <p>{{item.text}}</p>
@@ -18,8 +18,8 @@
   <div class="col-xs-4">
     <div class="sidebar">
       <h4>Online users</h4>
-      <div *ngFor="let usr of users | async" style="margin-bottom: 20px;">
-        <small>{{usr.name}}</small>
+      <div *ngFor="let usr of users | async" style="margin-bottom: 10px;">
+        <small>{{usr.name}}<span class="text-warning" *ngIf="isYou(usr.uid)"> (you)</span></small>
       </div>
     </div>
   </div>
@@ -34,7 +34,7 @@
                  [(ngModel)]="message" name="message" placeholder="Type your message here...">
         </div>
         <div class="col-sm-2 col-xs-3">
-          <button class="btn btn-default" style="width: 100%;">Send</button>
+          <button class="btn btn-success" style="width: 100%;">Send</button>
         </div>
       </div>
     </form>

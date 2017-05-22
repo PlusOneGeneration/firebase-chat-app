@@ -13,6 +13,7 @@ export class RoomComponent implements OnInit {
 
   messages: any;
   message: any = '';
+  currentUser: any = null;
 
   constructor(private firebaseService: FirebaseService) {
   }
@@ -21,6 +22,10 @@ export class RoomComponent implements OnInit {
     this.messages = this.firebaseService.getMessages();
 
     this.users = this.firebaseService.getOnlineUsers();
+
+    this.firebaseService.$user.subscribe((user) => {
+      this.currentUser = user;
+    });
   }
 
   send() {
@@ -32,6 +37,9 @@ export class RoomComponent implements OnInit {
     return moment(date).format('H: m (DD / MM / YYYY)');
   }
 
+  isYou(uid) {
+    return this.currentUser.uid === uid;
+  }
 
   getUserData(uid) {
     return this.firebaseService.getUserData(uid)

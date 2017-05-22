@@ -50,20 +50,30 @@ export class FirebaseService {
   login(email: string, password: string) {
     return this.afAuth.auth.signInWithEmailAndPassword(email, password)
       .then(() => {
+        console.log('>>>>> UID', this.afAuth.auth.currentUser.uid)
         this.$user.next(this.afAuth.auth.currentUser);
         localStorage.setItem('user', JSON.stringify(this.afAuth.auth.currentUser));
-        this.setUserToRoom(this.afAuth.auth.currentUser.uid).then(() => this.router.navigateByUrl('/app'));
+        this.setUserToRoom(this.afAuth.auth.currentUser.uid)
+          .then((user) => {
+            if (!user) {
+              console.log('User not found. Logout');
+              return this.logout();
+            }
+
+            this.router.navigateByUrl('/app')
+          });
       });
   }
 
   logout() {
     return Promise.resolve().then(() => {
       localStorage.removeItem('user');
-      return this.removeUserFromRoom(this.afAuth.auth.currentUser.uid).then(() => {
-        this.$user.next(null);
-        this.afAuth.auth.signOut();
-        this.router.navigateByUrl('/auth');
-      });
+      return this.removeUserFromRoom(this.afAuth.auth.currentUser.uid)
+        .then(() => {
+          this.$user.next(null);
+          this.afAuth.auth.signOut();
+          this.router.navigateByUrl('/auth');
+        });
     });
   }
 
@@ -87,29 +97,78 @@ export class FirebaseService {
     return this.onlineUsers;
   }
 
-  setUserToRoom(uid) {
-    return this.getUserData(uid).then((user) => this.onlineUsers.push(user));
+  setUserToRoom(uid): Promise<any> {
+    return this.getUserData(uid)
+      .then((user) => {
+        if (!user) {
+          return null;
+        }
+
+        return this.getOnlineUser(uid)
+          .then((userOnline) => {
+            if (userOnline) {
+              return user;
+            }
+
+            this.onlineUsers.push(user);
+            return user;
+          });
+      });
+  }
+
+  getOnlineUser(uid): Promise<any> {
+    return new Promise((resolve) => {
+      this.db.list('/room/online/', {
+        query: {
+          equalTo: uid,
+          orderByChild: 'uid'
+        }
+      }).subscribe((users) => {
+        if (!users || !users.length) {
+          return resolve(null);
+        }
+
+        return resolve(users[0])
+      });
+    });
   }
 
   removeUserFromRoom(uid) {
-    return this.onlineUsers.remove(uid);
+    return this.getOnlineUser(uid).then((user) => {
+      if (!user) {
+        return null;
+      }
+
+      return this.onlineUsers.remove(user.$key);
+    });
   }
 
   addUser(user) {
-    // remake with this.user.push()
-    return this.db.database.ref('users/' + user.uid).set(user);
+    return this.users.push(user);
   }
 
-  usersCash = {};
+  usersCache = {};
 
   getUserData(uid): Promise<any> {
-    if (!this.usersCash[uid]) {
-      // remake with this.user.list()
-      this.usersCash[uid] = Promise.resolve().then(() => {
-        return this.db.database.ref('users/' + uid).once('value').then((snapshot) => snapshot.val());
-      })
+    if (!this.usersCache[uid]) {
+      this.usersCache[uid] = Promise.resolve().then(() => {
+        return new Promise((resolve) => {
+          this.db.list('/users', {
+            query: {
+              equalTo: uid,
+              orderByChild: 'uid'
+            }
+          }).subscribe((users) => {
+            if (!users || !users.length) {
+              return resolve(null);
+            }
+
+            return resolve(users[0])
+          });
+        });
+      });
     }
 
-    return this.usersCash[uid];
+    return this.usersCache[uid];
   }
 }

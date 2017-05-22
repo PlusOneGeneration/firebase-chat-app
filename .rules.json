@@ -1,0 +1,35 @@
+{
+  "rules": {
+    ".read": "false",
+    ".write": "false",
+
+    "users": {
+      ".read": "auth !== null",
+      ".write": "auth !== null",
+      ".indexOn": "uid",
+
+      "$user_id": {
+        ".read": "auth.uid == data.child('uid').val()",
+        ".write": "auth.uid == data.child('uid').val()",
+      }
+    },
+
+    "room": {
+      ".read": "false",
+      ".write": "false",
+
+      "online": {
+        ".read": "true",
+        ".write": "auth !== null",
+        ".indexOn": "uid"
+      },
+      "messages": {
+        ".read": "auth !== null",
+        "$message_id": {
+          ".write": "(data.exists() === false && auth!==null) || auth.uid === data.child('author').val()",
+          ".validate": "newData.child('author').val() === auth.uid"
+        }
+      }
+    }
+  }
+}
