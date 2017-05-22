@@ -20,6 +20,8 @@
       <h4>Online users</h4>
       <div *ngFor="let usr of users | async" style="margin-bottom: 10px;">
         <small>{{usr.name}}<span class="text-warning" *ngIf="isYou(usr.uid)"> (you)</span></small>
+        <button (click)="banUser(usr)" class="btn btn-warning btn-xs pull-right">ban</button>
+        <button (click)="unBanUser(usr)" class="btn btn-success btn-xs pull-right">un-ban</button>
       </div>
     </div>
   </div>

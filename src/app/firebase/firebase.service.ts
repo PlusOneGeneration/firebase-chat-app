@@ -20,11 +20,6 @@ export class FirebaseService {
   constructor(private db: AngularFireDatabase,
               private router: Router,
               public afAuth: AngularFireAuth) {
-    let config = {
-      apiKey: "AIzaSyCaPoxUIQxAOx3P6sqjscBblMwLvaVXuAQ",
-      authDomain: "test-5b16b.firebaseapp.com",
-      databaseURL: "https://test-5b16b.firebaseio.com"
-    };
 
     let user = this.afAuth.auth.currentUser || JSON.parse(localStorage.getItem('user'));
 
@@ -103,47 +98,33 @@ export class FirebaseService {
           return null;
         }
 
-        return this.getOnlineUser(uid)
-          .then((userOnline) => {
-            if (userOnline) {
-              return user;
-            }
-
-            this.onlineUsers.push(user);
-            return user;
-          });
+        return this.setOnlineUser(user)
+          .then(() => user);
       });
   }
 
   getOnlineUser(uid): Promise<any> {
-    return new Promise((resolve) => {
-      this.db.list('/room/online/', {
-        query: {
-          equalTo: uid,
-          orderByChild: 'uid'
-        }
-      }).subscribe((users) => {
-        if (!users || !users.length) {
+    return new Promise((resolve, reject) => {
+      this.db.object('/room/online/' + uid).subscribe((user) => {
+        if (!user) {
           return resolve(null);
         }
 
-        return resolve(users[0])
-      });
+        return resolve(user)
+      }, reject);
     });
+  }
+
+  setOnlineUser(user) {
+    return this.db.object('/room/online/' + user.uid).set(user);
   }
 
   removeUserFromRoom(uid) {
-    return this.getOnlineUser(uid).then((user) => {
-      if (!user) {
-        return null;
-      }
-
-      return this.onlineUsers.remove(user.$key);
-    });
+    return this.onlineUsers.remove(uid);
   }
 
   addUser(user) {
-    return this.users.push(user);
+    return this.db.object('/users/' + user.uid).set(user);
   }
 
   usersCache = {};
@@ -151,23 +132,26 @@ export class FirebaseService {
   getUserData(uid): Promise<any> {
     if (!this.usersCache[uid]) {
       this.usersCache[uid] = Promise.resolve().then(() => {
-        return new Promise((resolve) => {
-          this.db.list('/users', {
-            query: {
-              equalTo: uid,
-              orderByChild: 'uid'
-            }
-          }).subscribe((users) => {
-            if (!users || !users.length) {
+        return new Promise((resolve, reject) => {
+          this.db.object('/users/' + uid).subscribe((user) => {
+            if (!user) {
               return resolve(null);
             }
 
-            return resolve(users[0])
-          });
+            return resolve(user)
+          }, reject);
         });
       });
     }
 
     return this.usersCache[uid];
+  }
+
+  banUser(user: any) {
+    return this.db.object('/room/bannedUsers/' + user.uid).set(user);
+  }
+
+  unBanUser(user: any) {
+    return this.db.object('/room/bannedUsers/' + user.uid).remove();
   }
 }

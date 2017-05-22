@@ -26,6 +26,8 @@ export class RoomComponent implements OnInit {
     this.firebaseService.$user.subscribe((user) => {
       this.currentUser = user;
     });
+
+    this.messages.subscribe(null, (err) => console.log('>>>>> err', err))
   }
 
   send() {
@@ -47,5 +49,13 @@ export class RoomComponent implements OnInit {
 
   deleteMessage(key) {
     return this.firebaseService.deleteMessage(key);
+  }
+
+  banUser(user) {
+    return this.firebaseService.banUser(user);
+  }
+
+  unBanUser(user) {
+    return this.firebaseService.unBanUser(user);
   }
 }
