@@ -2,6 +2,14 @@ import {Component, OnInit} from '@angular/core';
 import {FirebaseService} from "../../firebase/firebase.service";
 import * as moment from "moment";
 import {Observable, Subject, BehaviorSubject} from "rxjs";
+import messaging = firebase.messaging;
+
+class Message {
+  $key?: string;
+  text: string = '';
+  createdAt?: any;
+  author: string;
+}
 
 @Component({
   selector: 'room',
@@ -12,7 +20,7 @@ export class RoomComponent implements OnInit {
   users: any;
 
   messages: any;
-  message: any = '';
+  message: Message = new Message();
   currentUser: any = null;
 
   constructor(private firebaseService: FirebaseService) {
@@ -32,11 +40,11 @@ export class RoomComponent implements OnInit {
 
   send() {
     this.firebaseService.sendMessage(this.message);
-    this.message = '';
+    this.message = new Message();
   }
 
-  date(date) {
-    return moment(date).format('H: m (DD / MM / YYYY)');
+  dateConvert(date) {
+    return moment(date).format('H:m:s (DD/MM/YYYY)');
   }
 
   isYou(uid) {
@@ -51,11 +59,31 @@ export class RoomComponent implements OnInit {
     return this.firebaseService.deleteMessage(key);
   }
 
+  editMessage(key) {
+    return this.firebaseService.editMessage(key).then((message: any) => {
+      this.message = message;
+    });
+  }
+
+  checkBanMessages() {
+    return this.firebaseService.getMessages().subscribe((messages) => {
+      this.messages = Observable.of(messages);
+    }, (err) => {
+      if (err) {
+        this.messages = Observable.of([]);
+      }
+    });
+  }
+
   banUser(user) {
-    return this.firebaseService.banUser(user);
+    return this.firebaseService.banUser(user).then(() => this.checkBanMessages());
   }
 
   unBanUser(user) {
-    return this.firebaseService.unBanUser(user);
+    return this.firebaseService.unBanUser(user).then(() => this.checkBanMessages());
+  }
+
+  isBannedUser(uid): Promise<any> {
+    return this.firebaseService.isBannedUser(uid);
   }
 }

@@ -8,7 +8,6 @@ import {RouterModule} from "@angular/router";
 import { RoomComponent } from './room.component';
 import { RoomService } from './room.service';
 
-
 @NgModule({
   declarations: [
     RoomComponent
@@ -20,7 +19,6 @@ import { RoomService } from './room.service';
     FormsModule
   ],
   providers: [RoomService],
-  exports: [RoomComponent],
-  // bootstrap: [RoomComponent]
+  exports: [RoomComponent]
 })
 export class RoomModule { }

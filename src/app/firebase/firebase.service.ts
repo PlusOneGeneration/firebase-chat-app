@@ -72,19 +72,61 @@ export class FirebaseService {
   }
 
   getMessages() {
-    return this.messages;
+    return this.db.list('/room/messages', {
+      query: {
+        orderByChild: 'createdAt'
+      }
+    }).map((messages) => {
+      return messages.sort((a,b) => new Date(a.createdAt) < new Date(b.createdAt) ? -1 : 1);
+    });
   }
 
-  sendMessage(message: any) {
-    return this.messages.push({
-      createdAt: Date.now(),
-      text: message,
-      author: this.afAuth.auth.currentUser.uid
-    });
+  bannedUsersCache = {};
+
+  isBannedUser(uid): Promise<any> {
+    if (!this.bannedUsersCache[uid]) {
+      this.bannedUsersCache[uid] = Promise.resolve().then(() => {
+        return new Promise((resolve, reject) => {
+          this.db.object('/room/bannedUsers/' + uid).subscribe((user) => {
+            if (!user || user.$value === null) {
+              return resolve(false);
+            }
+
+            return resolve(true)
+          }, reject);
+        });
+      });
+    }
+
+    return this.bannedUsersCache[uid];
+  }
+
+  sendMessage(message: {$key?: string, text: string}) {
+    if (message.$key) {
+      return this.db.object('/room/messages/' + message.$key).set(message);
+    } else {
+      return this.messages.push({
+        createdAt: +Date.now(),
+        text: message.text,
+        author: this.afAuth.auth.currentUser.uid
+      });
+    }
   }
 
   deleteMessage(key: string) {
     this.messages.remove(key);
+  }
+
+  editMessage(key: string) {
+    return new Promise((resolve, reject) => {
+      this.db.object('/room/messages/' + key).subscribe((message) => {
+        if (!message) {
+          return resolve(null);
+        }
+
+        return resolve(message)
+      }, reject);
+    });
   }
 
   getOnlineUsers() {
@@ -148,10 +190,12 @@ export class FirebaseService {
   }
 
   banUser(user: any) {
-    return this.db.object('/room/bannedUsers/' + user.uid).set(user);
+    return this.db.object('/room/bannedUsers/' + user.uid).set(user)
+      .then(() => this.bannedUsersCache[user.uid] = null);
   }
 
   unBanUser(user: any) {
-    return this.db.object('/room/bannedUsers/' + user.uid).remove();
+    return this.db.object('/room/bannedUsers/' + user.uid).remove()
+      .then(() => this.bannedUsersCache[user.uid] = null);
   }
 }

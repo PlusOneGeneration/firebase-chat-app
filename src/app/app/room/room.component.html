@@ -1,17 +1,21 @@
 <div class="row">
   <div class="col-xs-8">
     <div class="main-block">
-      <!--<pre>{{messages | async | json}}</pre>-->
-      <div *ngFor="let item of messages | async" style="margin-bottom: 20px;">
+      <div *ngFor="let item of (messages | async )" style="margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #ccc;">
         <div>
-          <i class="text-muted">{{date(item.createdAt)}}</i>
-          <small>{{(getUserData(item.author) | async)?.name}}<span class="text-warning" *ngIf="isYou(item.author)"> (you)</span></small>
-          <div class="pull-right">
-            <button (click)="deleteMessage(item.$key)" class="btn btn-danger btn-xs">X</button>
+          <small class="text-muted">{{dateConvert(item.createdAt)}}</small>
+          <small>{{(getUserData(item.author) | async)?.name}}<span class="text-warning" *ngIf="isYou(item.author)"> (you)</span>
+          </small>
+          <div class="pull-right right-buttons">
+            <i class="mdi mdi-pencil pointer"
+               (click)="editMessage(item.$key)"
+               *ngIf="isYou(item.author)"></i>
+            <i class="mdi mdi-close pointer"
+               (click)="deleteMessage(item.$key)"
+               *ngIf="isYou(item.author)"></i>
           </div>
         </div>
         <p>{{item.text}}</p>
-
       </div>
     </div>
   </div>
@@ -19,9 +23,17 @@
     <div class="sidebar">
       <h4>Online users</h4>
       <div *ngFor="let usr of users | async" style="margin-bottom: 10px;">
-        <small>{{usr.name}}<span class="text-warning" *ngIf="isYou(usr.uid)"> (you)</span></small>
-        <button (click)="banUser(usr)" class="btn btn-warning btn-xs pull-right">ban</button>
-        <button (click)="unBanUser(usr)" class="btn btn-success btn-xs pull-right">un-ban</button>
+        <small [ngClass]="{'text-danger': usr.gender === 'female', 'text-info': usr.gender === 'male'}"
+        >
+          <i class="mdi mdi-gender-male" *ngIf="usr.gender === 'male'"></i>
+          <i class="mdi mdi-gender-female" *ngIf="usr.gender === 'female'"></i>
+          {{usr.name}}<span class="text-warning" *ngIf="isYou(usr.uid)"> (you)</span></small>
+        <button (click)="banUser(usr)"
+                *ngIf="!(isBannedUser(usr.uid) | async)"
+                class="btn btn-warning btn-xs pull-right">Ban</button>
+        <button (click)="unBanUser(usr)"
+                *ngIf="isBannedUser(usr.uid) | async"
+                class="btn btn-success btn-xs pull-right">Un-ban</button>
       </div>
     </div>
   </div>
@@ -33,7 +45,7 @@
       <div class="form-group">
         <div class="col-sm-10 col-xs-9">
           <input type="text" class="form-control"
-                 [(ngModel)]="message" name="message" placeholder="Type your message here...">
+                 [(ngModel)]="message.text" name="message" placeholder="Type your message here...">
         </div>
         <div class="col-sm-2 col-xs-3">
           <button class="btn btn-success" style="width: 100%;">Send</button>
