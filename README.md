@@ -6,7 +6,7 @@ It's a simple chat application based on Firebase Auth and Firebase DB components
 
 ![Auth](https://github.com/PlusOneGeneration/firebase-chat-app/blob/master/src/assets/111_firebase_001.png)
 
-## Main part: Chat with Firebase DB
+## Main (chat) part
 
 ![Chat](https://github.com/PlusOneGeneration/firebase-chat-app/blob/master/src/assets/111_firebase_002.png)
 
