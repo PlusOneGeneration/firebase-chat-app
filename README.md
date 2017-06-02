@@ -17,7 +17,7 @@ It's a simple chat application based on Firebase Auth and Firebase DB components
 * To use your Firebase just put credentials to`src/environments/environment.ts` 
 * Last step run: `npm start` and go to [`http://localhost:4200`](http://localhost:4200) in your browser
 
-## If you don't have your own Firebase Credentials but you want to use it on your own
+## Your own Firebase Credentials
 
 * Go to firebase console [`https://console.firebase.google.com/`](https://console.firebase.google.com/) (login or signup)
 * Create project
